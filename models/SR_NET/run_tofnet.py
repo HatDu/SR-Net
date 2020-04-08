@@ -3,12 +3,12 @@ import argparse
 import torch
 import os
 
-from models.TOF_NET.model_tofnet import TOF_NET
+from models.SR_NET.model_tofnet import SR_NET
 from utils.run import run_net
 from utils.run_2d import run_net
 from dataset import create_test_loader
 from tensorboardX import SummaryWriter
-from models.TOF_NET.train_tofnet import build_model
+from models.SR_NET.train_tofnet import build_model
 
 def load_model(checkpoint_file):
     checkpoint = torch.load(checkpoint_file)

@@ -3,14 +3,14 @@ import argparse
 import torch
 import os
 
-from models.TOF_NET.model_tofnet import TOF_NET
+from models.SR_NET.model_tofnet import SR_NET
 from utils.train import build_optim, init_model, run_epoch, save_model, set_seeds
 from dataset import create_train_loaders
 from tensorboardX import SummaryWriter
 from utils.args import Args
 
 def build_model(args):
-    model = TOF_NET(
+    model = SR_NET(
         nc=args.nc,
         nd=args.nd,
         nf=args.nf

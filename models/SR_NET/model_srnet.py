@@ -5,7 +5,7 @@ from models.SR_NET.dcn.deform_conv import ModulatedDeformConvPack as DCN
 from torch.utils.checkpoint import checkpoint
 
 # time offset fusion
-class TOF_CRNNcell(nn.Module):
+class SR_CRNNcell(nn.Module):
     def __init__(self, in_chans, out_chans, ksize):
         super().__init__()
         self.conv_offset1 = nn.Sequential(
@@ -34,7 +34,7 @@ class TOF_CRNNcell(nn.Module):
         align_feats = self.out_conv(align_feats)
         return align_feats, offset
 
-class TOF_BCRNNlayer(nn.Module):
+class SR_BCRNNlayer(nn.Module):
     def __init__(self, in_chans, out_chans, inter_chans, ksize=3):
         super().__init__()
         self.out_chans = out_chans
@@ -43,7 +43,7 @@ class TOF_BCRNNlayer(nn.Module):
             nn.Conv2d(in_chans, inter_chans, ksize, padding=ksize//2),
             nn.ReLU(inplace=True)
         )
-        self.tof_cell = TOF_CRNNcell(inter_chans, inter_chans, ksize)
+        self.SR_cell = SR_CRNNcell(inter_chans, inter_chans, ksize)
         self.out_conv = nn.Sequential(
             nn.Conv2d(inter_chans, out_chans, ksize, padding=ksize//2),
         )
@@ -60,7 +60,7 @@ class TOF_BCRNNlayer(nn.Module):
         hidden_offset = hidden_offset_init
         for i in range(nt):
             x_t = self.conv(x_seq[i:i+1])
-            align_feats, hidden_offset = self.tof_cell(hidden, x_t, hidden_offset)
+            align_feats, hidden_offset = self.SR_cell(hidden, x_t, hidden_offset)
             hidden = x_t + align_feats
             output_f.append(self.out_conv(hidden))
 
@@ -71,7 +71,7 @@ class TOF_BCRNNlayer(nn.Module):
         hidden_offset = hidden_offset_init
         for i in range(nt):
             x_t = self.conv(x_seq[nt - i - 1: nt - i])
-            align_feats, hidden_offset = self.tof_cell(hidden, x_t, hidden_offset)
+            align_feats, hidden_offset = self.SR_cell(hidden, x_t, hidden_offset)
             hidden = x_t + align_feats
             output_b.append(self.out_conv(hidden))
         output_b = torch.cat(output_b[::-1])
@@ -100,7 +100,7 @@ class ConvBlock(torch.nn.Module):
         y = self.overall_convs(x)
         return y
     
-class TOF_NET(nn.Module):
+class SR_NET(nn.Module):
     def __init__(self, n_ch=2, nf=64, ks=3, nc=5, nd=5):
         super().__init__()
         self.nc = nc
@@ -108,7 +108,7 @@ class TOF_NET(nn.Module):
         self.nf = nf
         self.ks = ks
 
-        self.bcrnn = TOF_BCRNNlayer(n_ch, n_ch, nf, ks)
+        self.bcrnn = SR_BCRNNlayer(n_ch, n_ch, nf, ks)
         self.crnn = ConvBlock(n_convs=nd, n_filters=nf, in_chans=2, out_chans=2)
         self.i = 0
         
